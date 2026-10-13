@@ -8,11 +8,11 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:
 
 st.set_page_config(page_title="Učenje Italijanskog", page_icon="🇮🇹", layout="centered")
 
-# CSS koji direktno targetira sve nivoe dugmadi i kartica
+# CSS za prilagođene boje
 st.markdown("""
 <style>
-    /* Zeleno dugme za karticu reči */
-    div[data-testid="stButton"] > button.green-card {
+    /* 1. Glavna zelenoj kartica sa reči na koju se klikće */
+    div.stButton > button.card-btn {
         background-color: #2e7d32 !important;
         color: white !important;
         font-size: 22px !important;
@@ -20,29 +20,26 @@ st.markdown("""
         padding: 25px !important;
         border-radius: 12px !important;
         border: none !important;
-        width: 100% !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
     }
-    
-    /* Dugme ✓ Savladana (Zeleno) */
+    div.stButton > button.card-btn:hover {
+        background-color: #1b5e20 !important;
+    }
+
+    /* 2. Dugme ✓ Savladana (Zeleno) */
     div.stButton > button[kind="primary"] {
         background-color: #2e7d32 !important;
         color: white !important;
         font-weight: bold !important;
         border: none !important;
     }
-    div.stButton > button[kind="primary"]:hover {
-        background-color: #1b5e20 !important;
-    }
 
-    /* Dugme ✗ Nesavladana (Crveno) */
+    /* 3. Dugme ✗ Nesavladana (Crveno) */
     div.stButton > button[kind="secondary"] {
         background-color: #c62828 !important;
         color: white !important;
         font-weight: bold !important;
         border: none !important;
-    }
-    div.stButton > button[kind="secondary"]:hover {
-        background-color: #b71c1c !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -67,8 +64,20 @@ if "df" not in st.session_state:
 
 sve_lekcije_list = sorted(st.session_state.df['Lekcija'].unique().tolist()) if not st.session_state.df.empty else []
 
-if "izabrane_lekcije" not in st.session_state or not st.session_state.izabrane_lekcije:
-    st.session_state.izabrane_lekcije = sve_lekcije_list
+# Učitavanje sačuvanih lekcija iz URL parametara ako postoje
+if "izabrane_lekcije" not in st.session_state:
+    if "lekcije" in st.query_params:
+        param_lekcije = st.query_params["lekcije"].split(",")
+        # Konverzija tipova naziva lekcija (broj ili tekst)
+        lek_sačuvane = []
+        for x in param_lekcije:
+            if x.isdigit():
+                lek_sačuvane.append(int(x))
+            else:
+                lek_sačuvane.append(x)
+        st.session_state.izabrane_lekcije = [l for l in lek_sačuvane if l in sve_lekcije_list] or sve_lekcije_list
+    else:
+        st.session_state.izabrane_lekcije = sve_lekcije_list
 
 if "prikazi_prevod" not in st.session_state:
     st.session_state.prikazi_prevod = False
@@ -112,16 +121,8 @@ if izbor_menija == "▶ Provera znanja":
         st.caption(f"Reč na jeziku: **{jezik}**")
         
         if not st.session_state.prikazi_prevod:
-            # Kartica sa zelenom pozadinom
-            st.markdown(
-                f"""
-                <div style="background-color: #2e7d32; color: white; padding: 25px; border-radius: 12px; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;">
-                    🗣️ {prikaz_rec}
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
-            if st.button("💡 Klikni ovde za prevod", use_container_width=True):
+            # Zelena kartica na koju se direktno klikće
+            if st.button(f"🗣️ {prikaz_rec}\n\n(Klikni na karticu za prevod)", use_container_width=True, key="card_btn"):
                 st.session_state.prikazi_prevod = True
                 st.rerun()
         else:
@@ -150,7 +151,6 @@ elif izbor_menija == "📚 Izbor lekcija":
     
     sve_lekcije = sorted(st.session_state.df['Lekcija'].unique().tolist())
     
-    # Multiselect opcija umesto pojedinačnih checkbox-ova za pouzdanije pamćenje
     izabrane_temp = st.multiselect(
         "Izaberite lekcije koje želite da učite:",
         options=sve_lekcije,
@@ -162,7 +162,8 @@ elif izbor_menija == "📚 Izbor lekcija":
             st.warning("Morate izabrati makar jednu lekciju!")
         else:
             st.session_state.izabrane_lekcije = izabrane_temp
-            st.success("Izbor lekcija sačuvan za trenutnu sesiju!")
+            st.query_params["lekcije"] = ",".join(map(str, izabrane_temp))
+            st.success("Izbor lekcija je sačuvan u vašem linku!")
 
 # --- 3. PREGLED REČI ---
 elif izbor_menija == "📋 Pregled reči":
