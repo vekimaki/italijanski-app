@@ -1,8 +1,3 @@
-Naravno, evo celog koda sa ubačenim stilom za mnogo krupnija slova u bočnom meniju!
-
-Samo iskopiraj ovo u svoj app.py na GitHub-u i meni će na telefonu odmah postati čitljiviji:
-
-Python
 import streamlit as st
 import pandas as pd
 import random
