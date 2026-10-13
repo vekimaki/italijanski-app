@@ -5,7 +5,7 @@ import random
 try:
     import gspread
     from google.oauth2.service_account import Credentials
-except ImportError:  # biblioteke nisu instalirane -> aplikacija radi bez trajnog čuvanja
+except ImportError:
     gspread = None
 
 # Link do tvoje Google Sheets tabele
@@ -13,20 +13,20 @@ SHEET_ID = "1mzbSkLBLwW9hCN6KSdWiLvYYiaaHoVtXV1xAkXI95XA"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv"
 
 KOLONA_STATUS = "Savladano/Nesavladano"
-LIST_PODESAVANJA = "Podesavanja"  # pomoćni list u tabeli u kom se pamti izbor lekcija
+LIST_PODESAVANJA = "Podesavanja"
 
 st.set_page_config(page_title="Učenje Italijanskog", page_icon="🇮🇹", layout="centered")
 
-# CSS za prilagođene boje (dugmad se gađaju preko ključa: .st-key-<key>)
+# CSS za prilagođene boje
 st.markdown("""
 <style>
-    /* 1. Velika zelena kartica sa rečju (ujedno i dugme za prevod) */
+    /* 1. Velika zelena kartica sa rečju (samo za postavljanje pitanja) */
     .st-key-card_btn button {
         background-color: #2e7d32 !important;
         border: none !important;
         border-radius: 12px !important;
         padding: 25px !important;
-        min-height: 170px !important;
+        min-height: 160px !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
     }
     .st-key-card_btn button:hover,
@@ -65,10 +65,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 # ---------------------------------------------------------------------------
-# Trajno čuvanje (Google Sheets). Ako nisu podešeni "secrets", aplikacija
-# radi kao ranije, ali se ništa ne pamti nakon zatvaranja.
+# Funkcije za trajno čuvanje
 # ---------------------------------------------------------------------------
 def cuvanje_ukljuceno():
     if gspread is None:
@@ -78,9 +76,7 @@ def cuvanje_ukljuceno():
     except Exception:
         return False
 
-
 CUVANJE = cuvanje_ukljuceno()
-
 
 @st.cache_resource
 def otvori_tabelu():
@@ -89,7 +85,6 @@ def otvori_tabelu():
         scopes=["https://www.googleapis.com/auth/spreadsheets"],
     )
     return gspread.authorize(creds).open_by_key(SHEET_ID)
-
 
 def list_podesavanja():
     tabela = otvori_tabelu()
@@ -100,9 +95,7 @@ def list_podesavanja():
         ws.update_cell(1, 1, "lekcije")
         return ws
 
-
 def snimi_status(idx, status):
-    """Upisuje Savladano/Nesavladano u tabelu (red = indeks + 2, zbog zaglavlja)."""
     if not CUVANJE:
         return
     try:
@@ -117,7 +110,6 @@ def snimi_status(idx, status):
     except Exception as e:
         st.warning(f"Status nije sačuvan u tabeli: {e}")
 
-
 def snimi_izbor_lekcija(lekcije):
     if not CUVANJE:
         return
@@ -126,11 +118,9 @@ def snimi_izbor_lekcija(lekcije):
     except Exception as e:
         st.warning(f"Izbor lekcija nije sačuvan u tabeli: {e}")
 
-
 def _u_lekciju(x):
     x = x.strip()
     return int(x) if x.isdigit() else x
-
 
 def ucitaj_izbor_lekcija(sve_lekcije):
     sacuvane = []
@@ -144,7 +134,6 @@ def ucitaj_izbor_lekcija(sve_lekcije):
         sacuvane = [_u_lekciju(x) for x in st.query_params["lekcije"].split(",") if x.strip()]
     izabrane = [l for l in sacuvane if l in sve_lekcije]
     return izabrane or sve_lekcije
-
 
 # ---------------------------------------------------------------------------
 # Učitavanje podataka
@@ -161,7 +150,6 @@ def ucitaj_podatke():
     except Exception as e:
         st.error(f"Greška pri učitavanju tabele: {e}")
         return pd.DataFrame()
-
 
 # Inicijalizacija podataka
 if "df" not in st.session_state:
@@ -219,19 +207,19 @@ if izbor_menija == "▶ Provera znanja":
 
         st.caption(f"Reč na jeziku: **{jezik}**")
 
-        # Jedna zelena kartica: pre klika prikazuje samo reč, posle klika i prevod.
+        # Ako prevod još nije prikazan -> Zeleno dugme-kartica
         if not st.session_state.prikazi_prevod:
             labela = f"🗣️ {prikaz_rec}\n\n(klikni na karticu za prevod)"
+            if st.button(labela, use_container_width=True, key="card_btn"):
+                st.session_state.prikazi_prevod = True
+                st.rerun()
+        # Ako je kliknuto -> Sistematska neutralna kartica sa prevodom i detaljima
         else:
-            labela = (
-                f"🇮🇹 {italijanski}\n\n"
-                f"🇷🇸 {srpski}\n\n"
-                f"{rec_podaci['Vrsta reči']} · {rec_podaci['Lekcija']}. lekcija"
+            st.info(
+                f"🇮🇹 **Italijanski:** {italijanski}\n\n"
+                f"🇷🇸 **Prevod:** {srpski}\n\n"
+                f"📌 **Vrsta:** {rec_podaci['Vrsta reči']} | 📖 **Lekcija:** {rec_podaci['Lekcija']}"
             )
-
-        if st.button(labela, use_container_width=True, key="card_btn"):
-            st.session_state.prikazi_prevod = not st.session_state.prikazi_prevod
-            st.rerun()
 
         if st.session_state.prikazi_prevod:
             col1, col2 = st.columns(2)
