@@ -8,6 +8,33 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:
 
 st.set_page_config(page_title="Učenje Italijanskog", page_icon="🇮🇹", layout="centered")
 
+# CSS za prilagođene boje dugmadi (Savladana -> Zeleno, Nesavladana -> Crveno)
+st.markdown("""
+<style>
+    /* Dugme za Savladano - Zeleno */
+    div.stButton > button[data-testid="stBaseButton-primary"] {
+        background-color: #2e7d32 !important;
+        color: white !important;
+        border: none !important;
+    }
+    div.stButton > button[data-testid="stBaseButton-primary"]:hover {
+        background-color: #1b5e20 !important;
+        color: white !important;
+    }
+    
+    /* Sekundarno dugme (Nesavladano) - Crveno */
+    div.stButton > button[data-testid="stBaseButton-secondary"] {
+        background-color: #c62828 !important;
+        color: white !important;
+        border: none !important;
+    }
+    div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
+        background-color: #b71c1c !important;
+        color: white !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Učitavanje podataka
 @st.cache_data(ttl=5)
 def ucitaj_podatke():
@@ -90,7 +117,7 @@ if izbor_menija == "▶ Provera znanja":
                         st.session_state.prikazi_prevod = False
                         st.rerun()
                 with col2:
-                    if st.button("✗ Nesavladana", use_container_width=True):
+                    if st.button("✗ Nesavladana", use_container_width=True, type="secondary"):
                         st.session_state.trenutna_rec = None
                         st.session_state.prikazi_prevod = False
                         st.rerun()
@@ -114,7 +141,7 @@ elif izbor_menija == "📚 Izbor lekcija":
             st.session_state.izabrane_lekcije = nove_izabrane
             st.success("Izbor lekcija sačuvan!")
 
-# --- 3. PREGLED REČI (SA OPCIJOM PROMENE STATUSA I POTVRDOM) ---
+# --- 3. PREGLED REČI ---
 elif izbor_menija == "📋 Pregled reči":
     st.title("📋 Pregled reči")
     
@@ -136,7 +163,6 @@ elif izbor_menija == "📋 Pregled reči":
     if df_prikaz.empty:
         st.info(f"Nema reči na spisku '{status_filter}'.")
     else:
-        # Opcije za padajući meni
         opcije_reci = {
             f"[{row['Lekcija']}. lekcija] {row['Reč (lema, sa članom)']} - {row['Prevod na srpski']}": idx
             for idx, row in df_prikaz.iterrows()
@@ -146,7 +172,6 @@ elif izbor_menija == "📋 Pregled reči":
         target_idx = opcije_reci[izabrana_labela]
         rec_naziv = st.session_state.df.loc[target_idx, 'Reč (lema, sa članom)']
         
-        # Potvrda izmene
         st.write(f"Prebaciti reč **'{rec_naziv}'** u **{novi_status}**?")
         potvrda = st.checkbox("Da, sigurna sam da želim da promenim status")
         
