@@ -8,10 +8,9 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:
 
 st.set_page_config(page_title="Učenje Italijanskog", page_icon="🇮🇹", layout="centered")
 
-# CSS za prilagođene boje dugmadi (Savladana -> Zeleno, Nesavladana -> Crveno)
+# CSS za boje dugmadi (Savladana -> Zeleno, Nesavladana -> Crveno)
 st.markdown("""
 <style>
-    /* Dugme za Savladano - Zeleno */
     div.stButton > button[data-testid="stBaseButton-primary"] {
         background-color: #2e7d32 !important;
         color: white !important;
@@ -21,8 +20,6 @@ st.markdown("""
         background-color: #1b5e20 !important;
         color: white !important;
     }
-    
-    /* Sekundarno dugme (Nesavladano) - Crveno */
     div.stButton > button[data-testid="stBaseButton-secondary"] {
         background-color: #c62828 !important;
         color: white !important;
@@ -49,12 +46,19 @@ def ucitaj_podatke():
         st.error(f"Greška pri učitavanju tabele: {e}")
         return pd.DataFrame()
 
-# Inicijalizacija stanja
+# Inicijalizacija podataka
 if "df" not in st.session_state:
     st.session_state.df = ucitaj_podatke()
 
-if "izabrane_lekcije" not in st.session_state and not st.session_state.df.empty:
-    st.session_state.izabrane_lekcije = sorted(st.session_state.df['Lekcija'].unique().tolist())
+sve_lekcije_list = sorted(st.session_state.df['Lekcija'].unique().tolist()) if not st.session_state.df.empty else []
+
+# Pamćenje izabranih lekcija preko URL parametara (da se ne zaborave pri ponovnom ulasku)
+if "izabrane_lekcije" not in st.session_state:
+    if "lekcije" in st.query_params:
+        podešene = st.query_params["lekcije"].split(",")
+        st.session_state.izabrane_lekcije = [int(x) if x.isdigit() else x for x in podešene]
+    else:
+        st.session_state.izabrane_lekcije = sve_lekcije_list
 
 if "prikazi_prevod" not in st.session_state:
     st.session_state.prikazi_prevod = False
@@ -139,6 +143,8 @@ elif izbor_menija == "📚 Izbor lekcija":
             st.warning("Morate izabrati makar jednu lekciju!")
         else:
             st.session_state.izabrane_lekcije = nove_izabrane
+            # Čuvanje izbora u URL parametrima
+            st.query_params["lekcije"] = ",".join(map(str, nove_izabrane))
             st.success("Izbor lekcija sačuvan!")
 
 # --- 3. PREGLED REČI ---
