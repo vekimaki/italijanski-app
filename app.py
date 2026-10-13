@@ -17,10 +17,22 @@ LIST_PODESAVANJA = "Podesavanja"
 
 st.set_page_config(page_title="Učenje Italijanskog", page_icon="🇮🇹", layout="centered")
 
-# CSS za prilagođene boje
+# CSS za boje i povećan bočni meni
 st.markdown("""
 <style>
-    /* 1. Velika zelena kartica sa rečju (samo za postavljanje pitanja) */
+    /* 1. Glavni meni u bočnoj traci - Povećana slova */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        font-size: 28px !important;
+        font-weight: bold !important;
+    }
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] p {
+        font-size: 20px !important;
+        font-weight: 500 !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+
+    /* 2. Velika zelena kartica sa rečju (samo za postavljanje pitanja) */
     .st-key-card_btn button {
         background-color: #2e7d32 !important;
         border: none !important;
@@ -43,7 +55,7 @@ st.markdown("""
         line-height: 1.5 !important;
     }
 
-    /* 2. Dugme ✓ Savladana (zeleno) */
+    /* 3. Dugme ✓ Savladana (zeleno) */
     .st-key-btn_savladana button {
         background-color: #2e7d32 !important;
         border: none !important;
@@ -53,7 +65,7 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* 3. Dugme ✗ Nesavladana (crveno) */
+    /* 4. Dugme ✗ Nesavladana (crveno) */
     .st-key-btn_nesavladana button {
         background-color: #c62828 !important;
         border: none !important;
@@ -207,13 +219,11 @@ if izbor_menija == "▶ Provera znanja":
 
         st.caption(f"Reč na jeziku: **{jezik}**")
 
-        # Ako prevod još nije prikazan -> Zeleno dugme-kartica
         if not st.session_state.prikazi_prevod:
             labela = f"🗣️ {prikaz_rec}\n\n(klikni na karticu za prevod)"
             if st.button(labela, use_container_width=True, key="card_btn"):
                 st.session_state.prikazi_prevod = True
                 st.rerun()
-        # Ako je kliknuto -> Sistematska neutralna kartica sa prevodom i detaljima
         else:
             st.info(
                 f"🇮🇹 **Italijanski:** {italijanski}\n\n"
