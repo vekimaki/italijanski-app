@@ -8,26 +8,48 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:
 
 st.set_page_config(page_title="Učenje Italijanskog", page_icon="🇮🇹", layout="centered")
 
-# CSS za boje dugmadi (Savladana -> Zeleno, Nesavladana -> Crveno)
+# CSS za prilagođene boje (Zelena kartica za reč, Zeleno za Savladana, Crveno za Nesavladana)
 st.markdown("""
 <style>
+    /* 1. Glavna kartica sa reči na koju se klikće - Svetlija/Prirodna Zelena */
+    div.stButton > button:not([data-testid="stBaseButton-primary"]):not([data-testid="stBaseButton-secondary"]):not([data-testid="stBaseButton-tertiary"]) {
+        background-color: #2e7d32 !important;
+        color: white !important;
+        font-size: 20px !important;
+        font-weight: bold !important;
+        padding: 30px !important;
+        border-radius: 12px !important;
+        border: 2px solid #1b5e20 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s, background-color 0.2s;
+    }
+    div.stButton > button:not([data-testid="stBaseButton-primary"]):not([data-testid="stBaseButton-secondary"]):hover {
+        background-color: #1b5e20 !important;
+        transform: scale(1.01);
+    }
+
+    /* 2. Dugme za Savladano - Zeleno */
     div.stButton > button[data-testid="stBaseButton-primary"] {
         background-color: #2e7d32 !important;
         color: white !important;
+        font-weight: bold !important;
+        border-radius: 8px !important;
         border: none !important;
     }
     div.stButton > button[data-testid="stBaseButton-primary"]:hover {
         background-color: #1b5e20 !important;
-        color: white !important;
     }
+    
+    /* 3. Dugme za Nesavladano - Crveno */
     div.stButton > button[data-testid="stBaseButton-secondary"] {
         background-color: #c62828 !important;
         color: white !important;
+        font-weight: bold !important;
+        border-radius: 8px !important;
         border: none !important;
     }
     div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
         background-color: #b71c1c !important;
-        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -52,7 +74,7 @@ if "df" not in st.session_state:
 
 sve_lekcije_list = sorted(st.session_state.df['Lekcija'].unique().tolist()) if not st.session_state.df.empty else []
 
-# Pamćenje izabranih lekcija preko URL parametara (da se ne zaborave pri ponovnom ulasku)
+# Pamćenje izabranih lekcija preko URL parametara
 if "izabrane_lekcije" not in st.session_state:
     if "lekcije" in st.query_params:
         podešene = st.query_params["lekcije"].split(",")
@@ -82,7 +104,7 @@ if izbor_menija == "▶ Provera znanja":
     if filtrirano.empty:
         st.success("🎉 Bravo! Prešli ste sve nesavladane reči iz izabranih lekcija!")
     else:
-        if st.session_state.trenutna_rec is None or st.button("🔄 Sledeća reč"):
+        if st.session_state.trenutna_rec is None or st.button("🔄 Sledeća reč", type="tertiary"):
             st.session_state.prikazi_prevod = False
             slucajni_idx = random.choice(filtrirano.index.tolist())
             st.session_state.trenutna_rec = filtrirano.loc[slucajni_idx]
@@ -103,6 +125,7 @@ if izbor_menija == "▶ Provera znanja":
         
         with st.container():
             if not st.session_state.prikazi_prevod:
+                # Glavna kartica - koristi opšte dugme koje CSS boji u zeleno
                 if st.button(f"🗣️ {prikaz_rec}\n\n(Klikni za prevod)", use_container_width=True):
                     st.session_state.prikazi_prevod = True
                     st.rerun()
@@ -143,7 +166,6 @@ elif izbor_menija == "📚 Izbor lekcija":
             st.warning("Morate izabrati makar jednu lekciju!")
         else:
             st.session_state.izabrane_lekcije = nove_izabrane
-            # Čuvanje izbora u URL parametrima
             st.query_params["lekcije"] = ",".join(map(str, nove_izabrane))
             st.success("Izbor lekcija sačuvan!")
 
